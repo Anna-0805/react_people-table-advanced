@@ -53,9 +53,6 @@ export const PeoplePage: React.FC = () => {
                   There are no people on the server
                 </p>
               )}
-              {!isLoading && people.length === 0 && (
-                <p>There are no people matching the current search criteria</p>
-              )}
               {!isLoading && !hasError && people.length > 0 && (
                 <PeopleTable
                   people={people}
