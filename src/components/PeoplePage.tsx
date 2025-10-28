@@ -10,7 +10,7 @@ export const PeoplePage: React.FC = () => {
   const [people, setPeople] = useState<Person[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const { personSlug } = useParams<{ personSlug: string }>();
+  const { slug: personSlug } = useParams();
   const [selectedPersonSlug, setSelectedPersonSlug] = useState<string | null>(
     null,
   );
