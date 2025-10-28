@@ -6,30 +6,29 @@ export const PeopleFilters: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const query = searchParams.get('query') || '';
-  const currentSex = searchParams.get('sex');
-  const selectedCenturies = searchParams.getAll('centuries');
+  const sex = searchParams.get('sex');
+  const centuries = searchParams.getAll('centuries');
 
-  function handleQueryChange(event: React.ChangeEvent<HTMLInputElement>) {
-    setSearchParams(
-      getSearchWith(searchParams, { query: event.target.value || null }),
-    );
+  function handleQueryChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value.trim();
+
+    setSearchParams(getSearchWith(searchParams, { query: value || null }));
   }
 
-  function handleSexChange(sex: 'm' | 'f' | null) {
-    setSearchParams(getSearchWith(searchParams, { sex }));
+  function handleSexChange(value: 'm' | 'f' | null) {
+    setSearchParams(getSearchWith(searchParams, { sex: value }));
   }
 
   function handleCenturyChange(century: string) {
-    const current = searchParams.getAll('centuries');
-    const updated = current.includes(century)
-      ? current.filter(c => c !== century)
-      : [...current, century];
+    const newCenturies = centuries.includes(century)
+      ? centuries.filter(c => c !== century)
+      : [...centuries, century];
 
-    const newParams = getSearchWith(searchParams, {
-      centuries: updated.length ? updated : null,
-    });
-
-    setSearchParams(newParams);
+    setSearchParams(
+      getSearchWith(searchParams, {
+        centuries: newCenturies.length ? newCenturies : null,
+      }),
+    );
   }
 
   function handleReset() {
@@ -42,19 +41,19 @@ export const PeopleFilters: React.FC = () => {
 
       <p className="panel-tabs" data-cy="SexFilter">
         <a
-          className={!currentSex ? 'is-active' : ''}
+          className={!sex ? 'is-active' : ''}
           onClick={() => handleSexChange(null)}
         >
           All
         </a>
         <a
-          className={currentSex === 'm' ? 'is-active' : ''}
+          className={sex === 'm' ? 'is-active' : ''}
           onClick={() => handleSexChange('m')}
         >
           Male
         </a>
         <a
-          className={currentSex === 'f' ? 'is-active' : ''}
+          className={sex === 'f' ? 'is-active' : ''}
           onClick={() => handleSexChange('f')}
         >
           Female
@@ -71,43 +70,33 @@ export const PeopleFilters: React.FC = () => {
             value={query}
             onChange={handleQueryChange}
           />
-
           <span className="icon is-left">
             <i className="fas fa-search" aria-hidden="true" />
           </span>
         </p>
       </div>
 
-      <div className="panel-block">
-        <div className="level is-flex-grow-1 is-mobile" data-cy="CenturyFilter">
-          <div className="level-left">
-            {['16', '17', '18', '19', '20'].map(c => (
-              <button
-                key={c}
-                data-cy="century"
-                className={`button mr-1 ${
-                  selectedCenturies.includes(c) ? 'is-info' : ''
-                }`}
-                onClick={() => handleCenturyChange(c)}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-
-          <div className="level-right ml-4">
+      <div className="panel-block" data-cy="CenturyFilter">
+        <div className="buttons">
+          {['16', '17', '18', '19', '20'].map(c => (
             <button
-              data-cy="centuryALL"
-              className="button is-success is-outlined"
-              onClick={() =>
-                setSearchParams(
-                  getSearchWith(searchParams, { centuries: null }),
-                )
-              }
+              key={c}
+              data-cy="century"
+              className={`button ${centuries.includes(c) ? 'is-info' : ''}`}
+              onClick={() => handleCenturyChange(c)}
             >
-              All
+              {c}
             </button>
-          </div>
+          ))}
+          <button
+            data-cy="centuryALL"
+            className="button is-success is-outlined"
+            onClick={() =>
+              setSearchParams(getSearchWith(searchParams, { centuries: null }))
+            }
+          >
+            All
+          </button>
         </div>
       </div>
 

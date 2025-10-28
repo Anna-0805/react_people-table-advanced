@@ -1,35 +1,126 @@
-import { useSearchParams } from 'react-router-dom';
+import React from 'react';
+import { useSearchParams } from 'react-router-dom'; // ✅ добавить импорт
+import classNames from 'classnames';
 import { Person } from '../types';
 import { SearchLink } from './SearchLink';
-import classNames from 'classnames';
+import { getSearchWith } from '../utils/searchHelper';
 
-export type Props = {
+type Props = {
   people: Person[];
   selectedPersonSlug?: string | null;
   onSelect?: (slug: string) => void;
 };
 
-/* eslint-disable jsx-a11y/control-has-associated-label */
+// ✅ Типизированная функция сравнения
+const compareValues = <T,>(a: T, b: T): number => {
+  if (a == null && b == null) {
+    return 0;
+  }
+
+  if (a == null) {
+    return -1;
+  }
+
+  if (b == null) {
+    return 1;
+  }
+
+  if (!isNaN(Number(a)) && !isNaN(Number(b))) {
+    return Number(a) - Number(b);
+  }
+
+  return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
+};
+
 export const PeopleTable: React.FC<Props> = ({
   people,
-  selectedPersonSlug = null,
+  selectedPersonSlug,
   onSelect,
 }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const query = searchParams.get('query')?.toLowerCase() || '';
   const sex = searchParams.get('sex');
   const centuries = searchParams.getAll('centuries');
+  const sortBy = searchParams.get('sort');
+  const order = searchParams.get('order');
 
-  const visiblePeople = people.filter(person => {
-    const matchesQuery = person.name.toLowerCase().includes(query);
-    const matchesSex = !sex || person.sex === sex;
-    const matchesCentury =
-      centuries.length === 0 ||
-      centuries.includes(String(Math.ceil(person.born / 100)));
+  const visiblePeople = people
+    .filter(person => {
+      const q = query.trim();
 
-    return matchesQuery && matchesSex && matchesCentury;
-  });
+      const inName = person.name.toLowerCase().includes(q);
+      const inMother = person.motherName?.toLowerCase().includes(q) ?? false;
+      const inFather = person.fatherName?.toLowerCase().includes(q) ?? false;
+
+      const matchesQuery = !q || inName || inMother || inFather;
+      const matchesSex = !sex || person.sex === sex;
+      const matchesCentury =
+        centuries.length === 0 ||
+        centuries.includes(String(Math.ceil(person.born / 100)));
+
+      return matchesQuery && matchesSex && matchesCentury;
+    })
+    .slice()
+    .sort((a, b) => {
+      if (!sortBy) {
+        return 0;
+      }
+
+      const key = sortBy as keyof Person;
+      const cmp = compareValues(a[key], b[key]);
+
+      return order === 'desc' ? -cmp : cmp;
+    });
+
+  function toggleSort(field: string) {
+    if (sortBy !== field) {
+      setSearchParams(
+        getSearchWith(searchParams, { sort: field, order: null }),
+      );
+    } else if (order !== 'desc') {
+      setSearchParams(
+        getSearchWith(searchParams, { sort: field, order: 'desc' }),
+      );
+    } else {
+      setSearchParams(getSearchWith(searchParams, { sort: null, order: null }));
+    }
+  }
+
+  const renderSortableTh = (field: string, label: string) => {
+    const isActive = sortBy === field;
+    const isDesc = isActive && order === 'desc';
+
+    return (
+      <th
+        key={field}
+        data-cy={`th-${field}`}
+        className="is-clickable has-text-weight-bold"
+        onClick={() => toggleSort(field)}
+        style={{
+          userSelect: 'none',
+        }}
+      >
+        <span>{label}</span>
+        <span
+          style={{
+            lineHeight: 1,
+          }}
+        >
+          {!isActive || !isDesc ? (
+            <span style={{ color: 'blue' }}>▲</span>
+          ) : (
+            <span style={{ visibility: 'hidden' }}>▲</span>
+          )}
+          {!isActive || isDesc ? (
+            <span style={{ color: 'blue' }}>▼</span>
+          ) : (
+            <span style={{ visibility: 'hidden' }}>▼</span>
+          )}
+        </span>
+      </th>
+    );
+  };
 
   if (visiblePeople.length === 0) {
     return (
@@ -46,14 +137,15 @@ export const PeopleTable: React.FC<Props> = ({
     >
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Sex</th>
-          <th>Born</th>
-          <th>Died</th>
-          <th>Mother</th>
-          <th>Father</th>
+          {renderSortableTh('name', 'Name')}
+          {renderSortableTh('sex', 'Sex')}
+          {renderSortableTh('born', 'Born')}
+          {renderSortableTh('died', 'Died')}
+          <th className="has-text-weight-bold">Mother</th>
+          <th className="has-text-weight-bold">Father</th>
         </tr>
       </thead>
+
       <tbody>
         {visiblePeople.map(person => {
           const mother = people.find(p => p.name === person.motherName) || null;
@@ -75,16 +167,10 @@ export const PeopleTable: React.FC<Props> = ({
               <td>{person.born}</td>
               <td>{person.died}</td>
               <td>
-                <SearchLink
-                  person={mother}
-                  fallbackName={person.motherName || null}
-                />
+                <SearchLink person={mother} fallbackName={person.motherName} />
               </td>
               <td>
-                <SearchLink
-                  person={father}
-                  fallbackName={person.fatherName || null}
-                />
+                <SearchLink person={father} fallbackName={person.fatherName} />
               </td>
             </tr>
           );
