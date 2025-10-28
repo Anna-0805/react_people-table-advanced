@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom'; // ✅ добавить импорт
+import { useSearchParams } from 'react-router-dom';
 import classNames from 'classnames';
 import { Person } from '../types';
 import { SearchLink } from './SearchLink';
@@ -11,7 +11,6 @@ type Props = {
   onSelect?: (slug: string) => void;
 };
 
-// ✅ Типизированная функция сравнения
 const compareValues = <T,>(a: T, b: T): number => {
   if (a == null && b == null) {
     return 0;
@@ -102,20 +101,15 @@ export const PeopleTable: React.FC<Props> = ({
         }}
       >
         <span>{label}</span>
-        <span
-          style={{
-            lineHeight: 1,
-          }}
-        >
-          {!isActive || !isDesc ? (
-            <span style={{ color: 'blue' }}>▲</span>
-          ) : (
-            <span style={{ visibility: 'hidden' }}>▲</span>
+        <span className="icon is-small ml-1">
+          {!isActive && <i className="fas fa-sort" style={{ color: '#ccc' }} />}
+
+          {isActive && !isDesc && (
+            <i className="fas fa-sort-up" style={{ color: 'blue' }} />
           )}
-          {!isActive || isDesc ? (
-            <span style={{ color: 'blue' }}>▼</span>
-          ) : (
-            <span style={{ visibility: 'hidden' }}>▼</span>
+
+          {isActive && isDesc && (
+            <i className="fas fa-sort-down" style={{ color: 'blue' }} />
           )}
         </span>
       </th>
